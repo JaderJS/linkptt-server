@@ -1,0 +1,92 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  cuid String @default(cuid()) @id
+  email String  @unique
+  name  String?
+  password String
+  avatarUrl String @default("https://gravatar.com/avatar/d466cb99882b22fc7ac77ef3fe1f58ec?s=200&d=identicon&r=pg")
+
+  usersToChannels UsersToChannels[]
+  myChannels Channel[]
+  myReceivedMessages Message[] @relation("from")
+  mySendMessages Message[] @relation("to")
+  myLocations Location[]
+
+  @@map("users")
+}
+
+enum Permission{
+  USER
+  MODERATOR
+  ADMIN
+}
+
+model UsersToChannels{
+  userCuid String
+  channelCuid String
+  permission Permission @default(USER)
+  user User @relation(fields: [userCuid], references: [cuid], onUpdate: Cascade, onDelete: Cascade)
+  channel Channel @relation(fields: [channelCuid], references: [cuid], onUpdate: Cascade, onDelete: Cascade)
+  @@id([userCuid, channelCuid])
+
+  @@map("users_to_channels")
+}
+
+model Channel{
+  cuid String @default(cuid()) @id
+  name String @unique
+  profileUrl String
+  ownerCuid String 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  owner User @relation(fields: [ownerCuid], references: [cuid], onUpdate: Cascade, onDelete: Cascade)
+  
+  usersToChannels UsersToChannels[]
+  messages Message[]
+
+  @@map("channels")
+}
+
+model Message{
+  id BigInt @id @default(autoincrement())
+  pathUrl String
+  transcript String
+  duration Int
+  fromCuid String 
+  toChannelCuid String? 
+  toUserCuid String?
+  createdAt DateTime @default(now())
+
+  from User @relation("from",fields: [fromCuid], references: [cuid], onUpdate: Cascade, onDelete: Cascade)
+  toChannel Channel? @relation(fields: [toChannelCuid], references: [cuid], onUpdate: Cascade, onDelete: Cascade)
+  toUser User? @relation("to",fields: [toUserCuid], references: [cuid], onUpdate: Cascade, onDelete: Cascade)
+
+  @@map("messages")
+}
+
+model Location{
+  id Int @id @default(autoincrement())
+  latitude String
+  longitude String
+  rssi Decimal @default(0)
+  userCuid String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userCuid], references: [cuid],onUpdate: Cascade, onDelete: Cascade)
+
+  @@map("locations")
+}
