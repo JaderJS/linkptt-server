@@ -5,9 +5,15 @@ import { config } from "../config"
 import debug from 'debug'
 import { Server } from "socket.io"
 import { Core } from "@/core/core"
+import cors from "cors"
 
-
+//+++ROUTES+++
 import users from "@/routes/user"
+import channels from "@/routes/channels"
+import global from "@/routes/global"
+
+import { error } from "./middleware/handler-errors"
+import path from "node:path"
 
 const log = debug(`api:main`)
 
@@ -20,20 +26,16 @@ const io = new Server(http, {
 })
 
 app.use(express.json())
+app.use(cors())
 app.use('/api', users)
+app.use('/api', channels)
 
-app.use((req: Request, res: Response, next) => {
-    log(req.query, `request at: ${new Date().toISOString()}`)
-    return next()
-})
-
-router.get('/', (req: Request, res: Response) => {
-    res.json({ "msg": "Hello world!" })
-})
-
-new Core(io)
+export const core = new Core(io)
 
 app.use(router)
+app.use(global)
+app.use(error)
+
 http.listen(config.PORT, () => {
     log(`Server is running in ${config.PORT}`)
 })

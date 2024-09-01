@@ -11,7 +11,26 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      -  ./db:/var/lib/postgresql/data
+      - ./db:/var/lib/postgresql/data
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    ports:
+      - "5051:9000"
+      - "5052:9001"
+    environment:
+      - MINIO_ROOT_USER=root
+      - MINIO_ROOT_PASSWORD=changemeplease123
+    volumes:
+      - minio-data:/data
+      - minio-config:/root/.minio
+    command: server /data --console-address ":5052"
+    restart: always
+
 volumes:
   db_data:
+    driver: local
+  minio-data:
+    driver: local
+  minio-config:
     driver: local
