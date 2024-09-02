@@ -6,7 +6,11 @@ import { prisma } from "@/prisma"
 import debug from "debug"
 import path from "node:path"
 import { createWriteStream, WriteStream } from "node:fs"
+import { PassThrough } from "node:stream"
 import { LocationProps, StartProps, StopProps } from "./types"
+import { s3, S3 } from "./aws"
+import { createId } from '@paralleldrive/cuid2'
+import { OpusEncoder } from "@discordjs/opus"
 
 const log = debug("@core")
 
@@ -22,21 +26,25 @@ type User = {
 
 type CustomSocket = Socket & {
     user?: User
-    stream?: WriteStream
+    stream?: PassThrough
 }
 
 type TransmissionProps = {
     from: string
 }
 
-
-
 export class Core {
     private io: Server
+    private s3: S3
     public users: Map<string, User> = new Map()
+    private createdCuid: Function
+    private opus: OpusEncoder
 
     constructor(io: Server) {
         this.io = io
+        this.s3 = s3
+        this.createdCuid = createId
+        this.opus = new OpusEncoder(48000, 1)
         this.setup()
     }
 
@@ -51,34 +59,49 @@ export class Core {
 
                 socket.join(channels.map(channel => channel.cuid))
 
-                socket.on("audio:chunk:wav", (chunk) => {
+                socket.on("audio:chunk", async (chunk) => {
+                    // const encode = this.opus.encode(chunk)
                     socket.broadcast.emit("audio:chunk", chunk)
-                    if (!socket.stream) {
-                        return
-                    }
-                    socket.stream.write(chunk)
+                    socket.stream?.write(chunk)
                 })
 
                 socket.on("audio:start", ({ from, type }: StartProps) => {
                     console.log("[AUDIO] start... ", from)
-                    const filePath = path.join(__dirname, '../../assets', `${socket.user?.cuid}-${new Date().toISOString()}.wav`)
-                    socket.stream = createWriteStream(filePath)
+                    // const filePath = path.join(__dirname, '../../assets', `${socket.user?.cuid}-${new Date().toISOString()}.wav`)
+                    // socket.stream = createWriteStream(filePath)
 
-                    if (type === "channel") {
-                        prisma.message.create({
-                            data: {
-                                duration: socket.stream.writableLength,
-                                pathUrl: filePath,
-                                transcript: "",
-                                from: {
-                                    connect: { cuid: socket.user?.cuid }
-                                },
-                                toChannel: {
-                                    connect: { cuid: from }
-                                }
-                            }
-                        }).then((data) => console.log(data)).catch((error) => console.error(error))
+                    const fileName = `${from}/${this.createdCuid()}.ogg`
+                    const passThrough = new PassThrough()
+                    socket.stream = passThrough
+
+                    const uploadParams = {
+                        Bucket: "linkptt",
+                        Key: fileName,
+                        Body: passThrough,
+                        ContentType: "audio/wav"
                     }
+                    this.s3.upload(uploadParams).promise().then(async (data) => {
+                        console.log(data)
+                        if (type === "channel") {
+                            await prisma.message.create({
+                                data: {
+                                    duration: 0,
+                                    pathUrl: data.Location,
+                                    path: fileName,
+                                    transcript: "",
+                                    from: {
+                                        connect: { cuid: socket.user?.cuid }
+                                    },
+                                    toChannel: {
+                                        connect: { cuid: from }
+                                    }
+                                }
+                            })
+                        }
+                    }).catch((error) => {
+                        console.error(error)
+                    })
+
                 })
 
                 socket.on("audio:stop", ({ from, type }: StopProps) => {

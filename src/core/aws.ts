@@ -7,3 +7,7 @@ const s3 = new AWS.S3({
     secretAccessKey: 'changemeplease123',
     s3ForcePathStyle: true
 })
+
+type S3 = typeof s3
+
+export { s3, S3 }

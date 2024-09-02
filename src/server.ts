@@ -10,6 +10,7 @@ import cors from "cors"
 //+++ROUTES+++
 import users from "@/routes/user"
 import channels from "@/routes/channels"
+import messages from "@/routes/message"
 import global from "@/routes/global"
 
 import { error } from "./middleware/handler-errors"
@@ -29,6 +30,7 @@ app.use(express.json())
 app.use(cors())
 app.use('/api', users)
 app.use('/api', channels)
+app.use('/api', messages)
 
 export const core = new Core(io)
 
