@@ -14,6 +14,10 @@ export class ApiError extends Error {
     }
 }
 
+router.get(`/`, (req: Request, res: Response) => {
+    res.json({ msg: "Hello! Welcome to linkptt services" })
+})
+
 router.all(`*`, (req: Request, res: Response, next: NextFunction) => {
     const error = new ApiError(`Can't find ${req.originalUrl} on the server! `)
     next(error)

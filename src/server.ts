@@ -39,5 +39,5 @@ app.use(global)
 app.use(error)
 
 http.listen(config.PORT, () => {
-    log(`Server is running in ${config.PORT}`)
+    console.log(`Server is running in http://localhost:${config.PORT}`)
 })

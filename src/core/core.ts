@@ -59,7 +59,7 @@ export class Core {
 
                 socket.join(channels.map(channel => channel.cuid))
 
-                socket.on("audio:chunk", async (chunk) => {
+                socket.on("audio:chunk:wav", async (chunk) => {
                     // const encode = this.opus.encode(chunk)
                     socket.broadcast.emit("audio:chunk", chunk)
                     socket.stream?.write(chunk)
