@@ -14,7 +14,7 @@ export class ApiError extends Error {
     }
 }
 
-router.get(`/`, (req: Request, res: Response) => {
+router.get(`/api`, (req: Request, res: Response) => {
     res.json({ msg: "Hello! Welcome to linkptt services" })
 })
 

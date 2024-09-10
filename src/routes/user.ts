@@ -61,15 +61,19 @@ router.post(`/user/login`, async (req: Request, res: Response) => {
         })
 
         const params = loginSchema.parse(req.body)
-        const user = await prisma.user.findUniqueOrThrow({ where: { email: params.email } })
+        const user = await prisma.user.findUnique({ where: { email: params.email } })
+        if (!user) {
+            return res.status(404).json({ msg: "User not founded!" })
+        }
+
         const match = comparePassword(params.password, user.password)
         if (!match) {
-            return res.status(403).send({ msg: "Unauthorize" })
+            return res.status(403).json({ msg: "Unauthorize" })
         }
         const token = sign(user, config.SECRET_KEY, { expiresIn: '30d' })
-        return res.send({ msg: "Access authorized", data: { user, token } })
+        return res.json({ msg: "Access authorized", data: { user, token } })
     } catch (error: any) {
-        return res.status(500).send({ msg: "Internal server error", error: error.message })
+        return res.status(500).json({ msg: "Internal server error", error: error.message })
 
     }
 })
