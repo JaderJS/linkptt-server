@@ -3,13 +3,15 @@ import { S3Client } from "@aws-sdk/client-s3"
 import { config } from "config"
 
 const s3 = new AWS.S3({
+    region: "eu-central-1",
     endpoint: config.URL_MINIO,
-    accessKeyId: 'root',
-    secretAccessKey: 'changemeplease123',
-    s3ForcePathStyle: true
+    accessKeyId: config.ACCESS_KEY_MINIO,
+    secretAccessKey: config.SECRET_KEY_MINIO,
+    s3ForcePathStyle: true,
 })
 
 const s3_ = new S3Client({
+    region:config.REGION_MINIO,
     credentials: {
         accessKeyId: config.ACCESS_KEY_MINIO,
         secretAccessKey: config.SECRET_KEY_MINIO

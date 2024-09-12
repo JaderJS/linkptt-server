@@ -6,7 +6,8 @@ const schema = z.object({
     SECRET_KEY: z.string(),
     URL_MINIO: z.string(),
     ACCESS_KEY_MINIO: z.string(),
-    SECRET_KEY_MINIO: z.string()
+    SECRET_KEY_MINIO: z.string(),
+    REGION_MINIO: z.string()
 })
 
 const config = schema.parse(process.env)

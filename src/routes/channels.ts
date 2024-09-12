@@ -19,39 +19,6 @@ router.get(`/channels`, async (req: Request, res: Response) => {
     }
 })
 
-router.get(`/channel/:channelCuid`, async (req: Request, res: Response) => {
-
-    try {
-        const channelCuid = z.string().parse(req.params.channelCuid)
-        const channel = await prisma.channel.findUniqueOrThrow({
-            where: { cuid: channelCuid },
-            include: {
-                _count: { select: { messages: true, usersToChannels: true } },
-                owner: {},
-                messages: {
-                    include: {
-                        from: {
-                            include: {}
-                        },
-                        toChannel: {
-                            include: {}
-                        },
-                        toUser: {
-                            include: {}
-                        }
-                    }
-                },
-                usersToChannels: { include: { user: {} } }
-            }
-        })
-        const res_ = JSONbig.stringify(channel)
-        return res.json({ msg: "Ok", channel: JSON.parse(res_) })
-    } catch (error: any) {
-        console.error(error)
-        return res.status(500).json({ msg: 'Error find channels', error: error.message })
-    }
-})
-
 router.post(`/channel`, async (req: Request, res: Response) => {
 
     const createChannelSchema = z.object({
@@ -100,6 +67,40 @@ router.post(`/channel/connect`, async (req: Request, res: Response) => {
     } catch (error: any) {
         console.log(error.message)
         return res.status(500).json({ msg: 'Error allocated user in channel', error: error.message })
+    }
+})
+
+router.get(`/channel/:channelCuid`, async (req: Request, res: Response) => {
+
+    try {
+        const channelCuid = z.string().parse(req.params.channelCuid)
+        const channel = await prisma.channel.findUniqueOrThrow({
+            where: { cuid: channelCuid },
+            include: {
+                _count: { select: { messages: true, usersToChannels: true } },
+                owner: {},
+                messages: {
+                    include: {
+                        from: {
+                            include: {}
+                        },
+                        toChannel: {
+                            include: {}
+                        },
+                        toUser: {
+                            include: {}
+                        }
+                    }
+                },
+                usersToChannels: { include: { user: {} } }
+            }
+        })
+        console.log(channel)
+        const res_ = JSONbig.stringify(channel)
+        return res.json({ msg: "Ok", channel: JSON.parse(res_) })
+    } catch (error: any) {
+        console.error(error)
+        return res.status(500).json({ msg: 'Error find channels', error: error.message })
     }
 })
 
